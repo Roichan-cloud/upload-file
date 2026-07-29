@@ -158,6 +158,14 @@ function initUploadPage() {
       return;
     }
 
+    // Validasi: hanya ekstensi tertentu yang diizinkan (diatur di config.js)
+    const nameLower = file.name.toLowerCase();
+    const isAllowedExt = CONFIG.ALLOWED_EXTENSIONS.some((ext) => nameLower.endsWith(ext.toLowerCase()));
+    if (!isAllowedExt) {
+      showToast(`Tipe file tidak didukung. Hanya ${CONFIG.ALLOWED_EXTENSIONS.join(", ")} yang diizinkan.`, "error");
+      return;
+    }
+
     selectedFile = file;
     fName.textContent = file.name; // textContent, aman dari XSS
     fSize.textContent = formatBytes(file.size);
@@ -204,8 +212,11 @@ function initUploadPage() {
         progressPct.textContent = Math.round(pct) + "%";
       });
 
-      // Link yang dibagikan mengarah ke download.html, TIDAK memakai nama file asli.
-      const shareUrl = `${window.location.origin}${window.location.pathname.replace(/index\.html$/, "").replace(/\/$/, "")}/download.html?id=${encodeURIComponent(fileId)}`;
+      // Link yang dibagikan mengarah ke download.html. Path penyimpanan file di
+      // storage TETAP memakai id acak (bukan nama asli), namun nama file asli
+      // disertakan sebagai parameter terpisah agar saat diunduh, nama filenya
+      // sama seperti yang diunggah pengguna.
+      const shareUrl = `${window.location.origin}${window.location.pathname.replace(/index\.html$/, "").replace(/\/$/, "")}/download.html?id=${encodeURIComponent(fileId)}&name=${encodeURIComponent(selectedFile.name)}`;
       resultLink.value = shareUrl;
       uploadForm.style.display = "none";
       resultView.classList.add("show");
@@ -312,6 +323,7 @@ async function initDownloadPage() {
 
   const params = new URLSearchParams(window.location.search);
   const fileId = params.get("id");
+  const originalName = params.get("name"); // nama file asli (opsional, untuk penamaan saat unduh)
 
   if (!fileId) {
     return showError("Link tidak valid. Parameter id tidak ditemukan.");
@@ -322,11 +334,12 @@ async function initDownloadPage() {
   }
 
   try {
-    // Ambil public URL dari Supabase Storage, dengan flag download agar
-    // browser langsung mengunduh (bukan membuka file di tab baru).
+    // Ambil public URL dari Supabase Storage. Opsi "download" dengan nilai
+    // string akan membuat browser menyimpan file dengan nama tersebut
+    // (sama seperti nama asli saat diunggah), bukan nama UUID di storage.
     const { data } = sb.storage
       .from(CONFIG.STORAGE_BUCKET)
-      .getPublicUrl(fileId, { download: true });
+      .getPublicUrl(fileId, { download: originalName || true });
 
     const publicUrl = data && data.publicUrl;
     if (!publicUrl) throw new Error("Tidak dapat membentuk URL file.");
