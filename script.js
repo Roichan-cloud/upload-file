@@ -1,0 +1,370 @@
+/* ==========================================================================
+   SCRIPT.JS
+   Logic untuk index.html (upload) dan download.html (download).
+   File ini otomatis mendeteksi ada di halaman mana lewat elemen yang tersedia.
+   Membutuhkan config.js dan Supabase JS SDK dimuat SEBELUM file ini.
+   ========================================================================== */
+
+/* --- Init Supabase client (dari UMD bundle supabase-js) --- */
+const { createClient } = supabase;
+const sb = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+/* ==========================================================================
+   UTIL: Toast Notification
+   ========================================================================== */
+function showToast(message, type = "info") {
+  const wrap = document.getElementById("toastWrap");
+  if (!wrap) return;
+
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+
+  const dot = document.createElement("span");
+  dot.className = "dot";
+
+  const text = document.createElement("span");
+  text.textContent = message; // textContent -> aman dari XSS, tidak pakai innerHTML
+
+  el.appendChild(dot);
+  el.appendChild(text);
+  wrap.appendChild(el);
+
+  setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transition = "opacity .3s ease";
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+}
+
+/* ==========================================================================
+   UTIL: Format ukuran file jadi human-readable (KB/MB/GB)
+   ========================================================================== */
+function formatBytes(bytes) {
+  if (bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+/* ==========================================================================
+   THEME SWITCHER (dipakai di kedua halaman)
+   ========================================================================== */
+(function initTheme() {
+  const saved = localStorage.getItem("dropshare-theme") || "lime";
+  applyTheme(saved);
+
+  document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const theme = btn.getAttribute("data-theme-btn");
+      applyTheme(theme);
+      localStorage.setItem("dropshare-theme", theme);
+    });
+  });
+
+  function applyTheme(theme) {
+    document.body.setAttribute("data-theme", theme);
+    document.querySelectorAll("[data-theme-btn]").forEach((b) => {
+      b.classList.toggle("active", b.getAttribute("data-theme-btn") === theme);
+    });
+  }
+})();
+
+/* ==========================================================================
+   Notifikasi status koneksi internet
+   ========================================================================== */
+window.addEventListener("offline", () => showToast("Koneksi internet terputus.", "error"));
+window.addEventListener("online", () => showToast("Koneksi internet tersambung kembali.", "success"));
+
+/* ==========================================================================
+   ROUTER SEDERHANA
+   index.html punya elemen #uploadView -> jalankan initUploadPage()
+   download.html punya elemen #downloadView -> jalankan initDownloadPage()
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("uploadView")) initUploadPage();
+  if (document.getElementById("downloadView")) initDownloadPage();
+});
+
+/* ==========================================================================
+   HALAMAN UPLOAD (index.html)
+   ========================================================================== */
+function initUploadPage() {
+  const dropzone   = document.getElementById("dropzone");
+  const fileInput  = document.getElementById("fileInput");
+  const fileInfo   = document.getElementById("fileInfo");
+  const fName      = document.getElementById("fName");
+  const fSize      = document.getElementById("fSize");
+  const fRemove    = document.getElementById("fRemove");
+  const uploadBtn  = document.getElementById("uploadBtn");
+  const uploadBtnText = document.getElementById("uploadBtnText");
+  const progressWrap  = document.getElementById("progressWrap");
+  const progressFill  = document.getElementById("progressFill");
+  const progressPct   = document.getElementById("progressPct");
+  const progressLabel = document.getElementById("progressLabel");
+  const uploadForm  = document.getElementById("uploadForm");
+  const resultView  = document.getElementById("resultView");
+  const resultLink  = document.getElementById("resultLink");
+  const copyBtn     = document.getElementById("copyBtn");
+  const openBtn     = document.getElementById("openBtn");
+  const resetBtn    = document.getElementById("resetBtn");
+
+  let selectedFile = null;
+  let isUploading  = false;
+
+  // --- Klik dropzone -> buka file picker ---
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+
+  // --- Drag & drop ---
+  ["dragenter", "dragover"].forEach((evt) => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+  });
+  ["dragleave", "drop"].forEach((evt) => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+    });
+  });
+  dropzone.addEventListener("drop", (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) selectFile(file);
+  });
+
+  // --- Pilih file via input ---
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) selectFile(fileInput.files[0]);
+  });
+
+  // --- Hapus file yang dipilih ---
+  fRemove.addEventListener("click", (e) => {
+    e.stopPropagation();
+    resetFileSelection();
+  });
+
+  function selectFile(file) {
+    // Validasi: file kosong
+    if (!file || file.size === 0) {
+      showToast("File kosong tidak dapat diunggah.", "error");
+      return;
+    }
+    // Validasi: ukuran maksimum dari config.js
+    if (file.size > CONFIG.MAX_FILE_SIZE) {
+      showToast(`Ukuran file melebihi batas maksimum (${formatBytes(CONFIG.MAX_FILE_SIZE)}).`, "error");
+      return;
+    }
+
+    selectedFile = file;
+    fName.textContent = file.name; // textContent, aman dari XSS
+    fSize.textContent = formatBytes(file.size);
+    fileInfo.classList.add("show");
+    uploadBtn.disabled = false;
+    uploadBtnText.textContent = "Unggah File";
+  }
+
+  function resetFileSelection() {
+    selectedFile = null;
+    fileInput.value = "";
+    fileInfo.classList.remove("show");
+    uploadBtn.disabled = true;
+    uploadBtnText.textContent = "Pilih file dahulu";
+    progressWrap.classList.remove("show");
+    progressFill.style.width = "0%";
+    progressPct.textContent = "0%";
+  }
+
+  // --- Proses upload ---
+  uploadBtn.addEventListener("click", async () => {
+    if (!selectedFile || isUploading) return;
+
+    if (!navigator.onLine) {
+      showToast("Tidak ada koneksi internet. Coba lagi nanti.", "error");
+      return;
+    }
+
+    isUploading = true;
+    uploadBtn.disabled = true;
+    fRemove.style.pointerEvents = "none";
+    progressWrap.classList.add("show");
+    progressLabel.textContent = "Uploading...";
+
+    uploadBtnText.innerHTML = "";
+    const spinner = document.createElement("span");
+    spinner.className = "spinner";
+    uploadBtnText.appendChild(spinner);
+    uploadBtnText.appendChild(document.createTextNode(" Mengunggah..."));
+
+    try {
+      const fileId = await uploadToSupabase(selectedFile, (pct) => {
+        progressFill.style.width = pct + "%";
+        progressPct.textContent = Math.round(pct) + "%";
+      });
+
+      // Link yang dibagikan mengarah ke download.html, TIDAK memakai nama file asli.
+      const shareUrl = `${window.location.origin}${window.location.pathname.replace(/index\.html$/, "").replace(/\/$/, "")}/download.html?id=${encodeURIComponent(fileId)}`;
+      resultLink.value = shareUrl;
+      uploadForm.style.display = "none";
+      resultView.classList.add("show");
+      showToast("File berhasil diunggah!", "success");
+
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Gagal mengunggah file. Coba lagi.", "error");
+      progressLabel.textContent = "Gagal mengunggah";
+    } finally {
+      isUploading = false;
+      uploadBtn.disabled = false;
+      fRemove.style.pointerEvents = "auto";
+      uploadBtnText.textContent = "Unggah File";
+    }
+  });
+
+  // --- Salin link ---
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(resultLink.value);
+      showToast("Link disalin ke clipboard!", "success");
+    } catch {
+      resultLink.select();
+      document.execCommand("copy");
+      showToast("Link disalin!", "success");
+    }
+  });
+
+  // --- Buka link ---
+  openBtn.addEventListener("click", () => {
+    window.open(resultLink.value, "_blank");
+  });
+
+  // --- Upload file lagi ---
+  resetBtn.addEventListener("click", () => {
+    resultView.classList.remove("show");
+    uploadForm.style.display = "block";
+    resetFileSelection();
+  });
+}
+
+/* ==========================================================================
+   FUNGSI: Upload file ke Supabase Storage dengan progress realtime.
+   Supabase-js tidak menyediakan event progress bawaan, jadi kita panggil
+   REST endpoint Storage API secara langsung lewat XMLHttpRequest agar bisa
+   memantau xhr.upload.onprogress.
+   ========================================================================== */
+async function uploadToSupabase(file, onProgress) {
+  // Buat nama file acak (UUID) supaya tidak bentrok & tidak membocorkan nama asli
+  const ext = file.name.includes(".") ? "." + file.name.split(".").pop().replace(/[^a-zA-Z0-9]/g, "") : "";
+  const fileId = crypto.randomUUID() + ext;
+
+  const uploadUrl = `${CONFIG.SUPABASE_URL}/storage/v1/object/${encodeURIComponent(CONFIG.STORAGE_BUCKET)}/${encodeURIComponent(fileId)}`;
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", uploadUrl, true);
+    xhr.setRequestHeader("Authorization", `Bearer ${CONFIG.SUPABASE_ANON_KEY}`);
+    xhr.setRequestHeader("apikey", CONFIG.SUPABASE_ANON_KEY);
+    xhr.setRequestHeader("x-upsert", "false"); // hindari overwrite file yang sudah ada
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("cache-control", "3600");
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress((e.loaded / e.total) * 100);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress(100);
+        resolve(fileId);
+      } else {
+        let msg = "Upload gagal. Periksa konfigurasi Supabase atau koneksimu.";
+        try {
+          const parsed = JSON.parse(xhr.responseText);
+          if (parsed.message) msg = parsed.message;
+        } catch (_) { /* biarkan pesan default */ }
+        reject(new Error(msg));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("Koneksi terputus saat mengunggah. Coba lagi."));
+    xhr.onabort = () => reject(new Error("Upload dibatalkan."));
+
+    xhr.send(file);
+  });
+}
+
+/* ==========================================================================
+   HALAMAN DOWNLOAD (download.html)
+   Alur:
+   1. Ambil parameter ?id=
+   2. Bentuk public URL dari Supabase Storage
+   3. Cek file ada (HEAD request) -> jika ok, trigger auto-download
+   4. Tampilkan error yang jelas jika gagal / offline
+   ========================================================================== */
+async function initDownloadPage() {
+  const dlLoading   = document.getElementById("dlLoading");
+  const dlError     = document.getElementById("dlError");
+  const dlErrorMsg  = document.getElementById("dlErrorMsg");
+  const dlDone      = document.getElementById("dlDone");
+  const dlManualBtn = document.getElementById("dlManualBtn");
+
+  const params = new URLSearchParams(window.location.search);
+  const fileId = params.get("id");
+
+  if (!fileId) {
+    return showError("Link tidak valid. Parameter id tidak ditemukan.");
+  }
+
+  if (!navigator.onLine) {
+    return showError("Tidak ada koneksi internet. Periksa jaringanmu dan coba lagi.");
+  }
+
+  try {
+    // Ambil public URL dari Supabase Storage, dengan flag download agar
+    // browser langsung mengunduh (bukan membuka file di tab baru).
+    const { data } = sb.storage
+      .from(CONFIG.STORAGE_BUCKET)
+      .getPublicUrl(fileId, { download: true });
+
+    const publicUrl = data && data.publicUrl;
+    if (!publicUrl) throw new Error("Tidak dapat membentuk URL file.");
+
+    // Cek dulu apakah file benar-benar ada, agar tidak menampilkan halaman
+    // error mentah dari Supabase saat file tidak ditemukan.
+    const check = await fetch(publicUrl, { method: "HEAD" }).catch(() => null);
+    if (!check || !check.ok) {
+      return showError("File tidak ditemukan. Link mungkin sudah kedaluwarsa atau dihapus.");
+    }
+
+    // Trigger auto-download
+    triggerDownload(publicUrl);
+    dlManualBtn.addEventListener("click", () => triggerDownload(publicUrl));
+
+    setTimeout(() => {
+      dlLoading.style.display = "none";
+      dlDone.style.display = "block";
+    }, 900);
+
+  } catch (err) {
+    console.error(err);
+    showError("Terjadi kesalahan saat menyiapkan file. Coba lagi nanti.");
+  }
+
+  function triggerDownload(url) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function showError(message) {
+    dlLoading.style.display = "none";
+    dlError.classList.add("show");
+    dlErrorMsg.textContent = message;
+    showToast(message, "error");
+  }
+}
