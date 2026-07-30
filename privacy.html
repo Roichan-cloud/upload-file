@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kebijakan Privasi — DropShare</title>
+<meta name="description" content="Kebijakan privasi penggunaan layanan DropShare.">
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body {
+  font-family:'Inter', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  background-image: var(--bg-decor);
+  min-height:100vh;
+  transition: background .4s ease, color .4s ease;
+}
+h1,h2,.logo-text { font-family:'Poppins', sans-serif; }
+svg { display:block; }
+
+:root, [data-theme="lime"] {
+  --bg:#eefbdd;
+  --bg-decor: radial-gradient(circle at 15% 10%, rgba(163,230,53,.35), transparent 45%),
+              radial-gradient(circle at 90% 80%, rgba(101,163,13,.25), transparent 50%);
+  --text:#1c2b12; --text-soft:#4b5c3d; --accent:#65a30d; --accent-2:#84cc16; --on-accent:#0d1b04;
+  --glass-bg: rgba(255,255,255,.55); --glass-border: rgba(255,255,255,.65);
+  --card-shadow: 0 20px 45px -15px rgba(60,90,10,.35);
+}
+[data-theme="light"] {
+  --bg:#f7f8fb;
+  --bg-decor: radial-gradient(circle at 15% 10%, rgba(120,120,255,.08), transparent 45%),
+              radial-gradient(circle at 90% 80%, rgba(0,0,0,.04), transparent 50%);
+  --text:#1a1c22; --text-soft:#5b6070; --accent:#4f46e5; --accent-2:#6366f1; --on-accent:#ffffff;
+  --glass-bg: rgba(255,255,255,.65); --glass-border: rgba(255,255,255,.8);
+  --card-shadow: 0 20px 45px -15px rgba(30,30,60,.18);
+}
+[data-theme="dark"] {
+  --bg:#0b0e0a;
+  --bg-decor: radial-gradient(circle at 15% 10%, rgba(163,230,53,.18), transparent 45%),
+              radial-gradient(circle at 90% 80%, rgba(101,163,13,.14), transparent 50%);
+  --text:#eef5e6; --text-soft:#a7b39a; --accent:#a3e635; --accent-2:#84cc16; --on-accent:#0d1b04;
+  --glass-bg: rgba(255,255,255,.05); --glass-border: rgba(255,255,255,.12);
+  --card-shadow: 0 20px 45px -15px rgba(0,0,0,.6);
+}
+
+.page { min-height:100vh; display:flex; flex-direction:column; align-items:center; padding: 28px 18px 60px; }
+.theme-switch {
+  position: sticky; top: 16px; align-self:flex-end; display:flex; gap:6px;
+  background: var(--glass-bg); border:1px solid var(--glass-border);
+  backdrop-filter: blur(14px); padding:6px; border-radius:999px; box-shadow: var(--card-shadow); z-index:50;
+}
+.theme-switch button {
+  width:34px; height:34px; border-radius:50%; border:2px solid transparent; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition: transform .2s ease, border-color .2s ease; color:#fff;
+}
+.theme-switch button:hover { transform: translateY(-2px) scale(1.05); }
+.theme-switch button.active { border-color: var(--accent); }
+.ts-light { background: linear-gradient(135deg,#ffffff,#dcdfe6); color:#5b6070; }
+.ts-lime  { background: linear-gradient(135deg,#bef264,#65a30d); }
+.ts-dark  { background: linear-gradient(135deg,#3a3f36,#0b0e0a); }
+
+.brand { display:flex; flex-direction:column; align-items:center; gap:10px; margin: 18px 0 30px; text-align:center; }
+.logo-mark {
+  width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: var(--on-accent);
+  box-shadow: 0 10px 25px -8px rgba(101,163,13,.6);
+}
+.logo-text { font-size:22px; font-weight:800; letter-spacing:-.02em; }
+.logo-text span { color: var(--accent); }
+
+.card {
+  width:100%; max-width:600px; background: var(--glass-bg); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px); border-radius: 26px; padding: 34px; box-shadow: var(--card-shadow);
+}
+.card h1 { font-size:22px; margin-bottom:6px; }
+.card .updated { color: var(--text-soft); font-size:12.5px; margin-bottom:22px; }
+.card h2 { font-size:15px; margin-top:22px; margin-bottom:8px; }
+.card p, .card li { color: var(--text-soft); font-size:14px; line-height:1.7; }
+.card ul { padding-left:20px; margin-top:6px; }
+.back-link {
+  display:inline-flex; align-items:center; gap:6px; margin-top:26px; color: var(--accent);
+  font-weight:600; font-size:14px; text-decoration:none;
+}
+.back-link:hover { text-decoration:underline; }
+footer.credit { margin-top:30px; font-size:12px; color: var(--text-soft); text-align:center; line-height:1.8; }
+footer.credit a { color: var(--text-soft); text-decoration:underline; text-underline-offset:2px; }
+footer.credit a:hover { color: var(--accent); }
+footer.credit .sep { margin:0 6px; opacity:.5; }
+
+@media (max-width: 420px) { .card { padding:24px; border-radius:20px; } }
+@media (prefers-reduced-motion: reduce) { * { animation-duration:.001s !important; transition-duration:.001s !important; } }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body data-theme="lime">
+<div class="page">
+
+  <div class="theme-switch" role="group" aria-label="Pilih tema tampilan">
+    <button class="ts-light" data-theme-btn="light" title="Mode Terang Putih" aria-label="Mode Terang Putih">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <button class="ts-lime active" data-theme-btn="lime" title="Mode Green Lime" aria-label="Mode Green Lime">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c-4.5 0-8-3.5-8-8 0-6 8-12 8-12s8 6 8 12c0 4.5-3.5 8-8 8Z"/></svg>
+    </button>
+    <button class="ts-dark" data-theme-btn="dark" title="Mode Gelap" aria-label="Mode Gelap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+    </button>
+  </div>
+
+  <div class="brand">
+    <div class="logo-mark">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6 15.4 6.4M8.6 13.4l6.8 4.2"/></svg>
+    </div>
+    <div class="logo-text">Drop<span>Share</span></div>
+  </div>
+
+  <div class="card">
+    <h1>Kebijakan Privasi</h1>
+    <p class="updated">Terakhir diperbarui: 30 Juli 2026</p>
+
+    <p>DropShare adalah layanan berbagi file sederhana. Halaman ini menjelaskan data apa saja yang diproses saat kamu menggunakan layanan ini.</p>
+
+    <h2>Data yang diproses</h2>
+    <ul>
+      <li>File yang kamu unggah disimpan di penyedia layanan penyimpanan pihak ketiga (Supabase Storage).</li>
+      <li>Nama file asli dapat disertakan pada link unduhan agar file terunduh dengan nama yang sesuai.</li>
+      <li>DropShare tidak mengumpulkan data pribadi tambahan (tidak ada akun, tidak ada pelacakan iklan).</li>
+    </ul>
+
+    <h2>Keamanan link</h2>
+    <p>Setiap file diberi nama acak (UUID) di penyimpanan sehingga tidak mudah ditebak. Namun, siapa pun yang memiliki link unduhan dapat mengakses file tersebut — jangan bagikan link ke pihak yang tidak berkepentingan.</p>
+
+    <h2>Penghapusan file</h2>
+    <p>Untuk menghapus file yang sudah diunggah, hubungi pengelola layanan ini atau kelola langsung melalui dashboard penyimpanan yang digunakan.</p>
+
+    <h2>Perubahan kebijakan</h2>
+    <p>Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan akan tercermin pada tanggal pembaruan di atas.</p>
+
+    <a class="back-link" href="index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Kembali ke Beranda
+    </a>
+  </div>
+
+  <footer class="credit">
+    Dibangun dengan Supabase Storage · DropShare<br>
+    <a href="privacy.html">Kebijakan Privasi</a><span class="sep">·</span><a href="terms.html">Ketentuan Layanan</a>
+  </footer>
+</div>
+
+<script>
+(function initTheme() {
+  const saved = localStorage.getItem("dropshare-theme") || "lime";
+  applyTheme(saved);
+  document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const theme = btn.getAttribute("data-theme-btn");
+      applyTheme(theme);
+      localStorage.setItem("dropshare-theme", theme);
+    });
+  });
+  function applyTheme(theme) {
+    document.body.setAttribute("data-theme", theme);
+    document.querySelectorAll("[data-theme-btn]").forEach((b) => {
+      b.classList.toggle("active", b.getAttribute("data-theme-btn") === theme);
+    });
+  }
+})();
+</script>
+</body>
+</html>
