@@ -215,6 +215,7 @@ function initUploadPage() {
     uploadBtnText.textContent = "Pilih file dahulu";
     progressWrap.classList.remove("show");
     progressFill.style.width = "0%";
+    progressFill.classList.remove("shimmer");
     progressPct.textContent = "0%";
   }
 
@@ -243,6 +244,7 @@ function initUploadPage() {
       const fileId = await uploadToSupabase(selectedFile, (pct) => {
         progressFill.style.width = pct + "%";
         progressPct.textContent = Math.round(pct) + "%";
+        progressFill.classList.toggle("shimmer", pct >= 90);
       });
 
       // Link yang dibagikan mengarah ke download.html. Path penyimpanan file di
@@ -348,11 +350,18 @@ async function uploadToSupabase(file, onProgress) {
    4. Tampilkan error yang jelas jika gagal / offline
    ========================================================================== */
 async function initDownloadPage() {
-  const dlLoading   = document.getElementById("dlLoading");
-  const dlError     = document.getElementById("dlError");
-  const dlErrorMsg  = document.getElementById("dlErrorMsg");
-  const dlDone      = document.getElementById("dlDone");
-  const dlManualBtn = document.getElementById("dlManualBtn");
+  const dlLoading      = document.getElementById("dlLoading");
+  const dlReady        = document.getElementById("dlReady");
+  const dlReadyIcon    = document.getElementById("dlReadyIcon");
+  const dlFileName     = document.getElementById("dlFileName");
+  const dlFileSize     = document.getElementById("dlFileSize");
+  const dlFileDate     = document.getElementById("dlFileDate");
+  const dlReadyStatus  = document.getElementById("dlReadyStatus");
+  const dlReadySpinner = document.getElementById("dlReadySpinner");
+  const dlManualWrap   = document.getElementById("dlManualWrap");
+  const dlManualBtn    = document.getElementById("dlManualBtn");
+  const dlError        = document.getElementById("dlError");
+  const dlErrorMsg     = document.getElementById("dlErrorMsg");
 
   const params = new URLSearchParams(window.location.search);
   const fileId = params.get("id");
@@ -377,21 +386,39 @@ async function initDownloadPage() {
     const publicUrl = data && data.publicUrl;
     if (!publicUrl) throw new Error("Tidak dapat membentuk URL file.");
 
-    // Cek dulu apakah file benar-benar ada, agar tidak menampilkan halaman
-    // error mentah dari Supabase saat file tidak ditemukan.
+    // Cek dulu apakah file benar-benar ada, sekaligus ambil info ukuran &
+    // tanggal upload dari response header (Content-Length, Last-Modified),
+    // agar tidak menampilkan halaman error mentah dari Supabase.
     const check = await fetch(publicUrl, { method: "HEAD" }).catch(() => null);
     if (!check || !check.ok) {
       return showError("File tidak ditemukan. Link mungkin sudah kedaluwarsa atau dihapus.");
     }
 
-    // Trigger auto-download
-    triggerDownload(publicUrl);
-    dlManualBtn.addEventListener("click", () => triggerDownload(publicUrl));
+    const sizeHeader = check.headers.get("content-length");
+    const dateHeader = check.headers.get("last-modified");
 
-    setTimeout(() => {
-      dlLoading.style.display = "none";
-      dlDone.style.display = "block";
-    }, 900);
+    // Tampilkan kartu info file SEBELUM unduhan benar-benar dimulai
+    dlFileName.textContent = originalName || fileId;
+    dlFileSize.textContent = sizeHeader ? formatBytes(parseInt(sizeHeader, 10)) : "Ukuran tidak diketahui";
+    dlFileDate.textContent = dateHeader ? formatUploadDate(dateHeader) : "Tanggal tidak diketahui";
+
+    dlLoading.style.display = "none";
+    dlReady.style.display = "block";
+    dlReadyStatus.textContent = "Menyiapkan unduhan...";
+
+    // Beri jeda sebentar supaya pengguna sempat melihat info file sebelum
+    // browser mulai mengunduh.
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    triggerDownload(publicUrl);
+
+    // Update tampilan jadi status "selesai memicu unduhan"
+    dlReadySpinner.style.display = "none";
+    dlReadyStatus.textContent = "Unduhan dimulai. Jika tidak berjalan otomatis, klik tombol di bawah.";
+    dlReadyIcon.outerHTML = '<svg id="dlReadyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    dlManualWrap.style.display = "block";
+
+    dlManualBtn.addEventListener("click", () => triggerDownload(publicUrl));
 
   } catch (err) {
     console.error(err);
@@ -409,8 +436,24 @@ async function initDownloadPage() {
 
   function showError(message) {
     dlLoading.style.display = "none";
+    dlReady.style.display = "none";
     dlError.classList.add("show");
     dlErrorMsg.textContent = message;
     showToast(message, "error");
+  }
+}
+
+/* ==========================================================================
+   UTIL: Format tanggal upload (dari header Last-Modified) ke format Indonesia
+   ========================================================================== */
+function formatUploadDate(httpDateStr) {
+  try {
+    const d = new Date(httpDateStr);
+    return d.toLocaleDateString("id-ID", {
+      day: "numeric", month: "long", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+  } catch {
+    return "Tanggal tidak diketahui";
   }
 }
