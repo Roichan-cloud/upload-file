@@ -6,6 +6,22 @@
 <title>DropShare — Bagikan File Secepat Kilat</title>
 <meta name="description" content="Unggah file, dapatkan link, bagikan. Simpel dan cepat.">
 
+<!-- Favicon -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Open Graph / preview link untuk WhatsApp, Telegram, dll -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="DropShare — Bagikan File Secepat Kilat">
+<meta property="og:description" content="Unggah file, dapatkan link, dan bagikan ke siapa saja secara instan.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:url" content="https://roichan-cloud.github.io/upload-file/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DropShare — Bagikan File Secepat Kilat">
+<meta name="twitter:description" content="Unggah file, dapatkan link, dan bagikan ke siapa saja secara instan.">
+<meta name="twitter:image" content="og-image.png">
+
 <!-- Font modern: Poppins (display) + Inter (body) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -243,6 +259,20 @@ svg { display:block; }
   border-radius:999px;
   transition: width .15s ease;
   box-shadow: 0 0 12px 0 color-mix(in srgb, var(--accent) 60%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+/* Efek shimmer/berkilau saat progress mendekati 100% */
+.progress-fill.shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; height: 100%; width: 60%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+  animation: shimmer-sweep 1s ease-in-out infinite;
+}
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
 }
 .progress-status {
   display:flex; justify-content:space-between;
@@ -350,7 +380,16 @@ svg { display:block; }
 
 footer.credit {
   margin-top:30px; font-size:12px; color: var(--text-soft); text-align:center;
+  line-height:1.8;
 }
+footer.credit a {
+  color: var(--text-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color .15s ease;
+}
+footer.credit a:hover { color: var(--accent); }
+footer.credit .sep { margin: 0 6px; opacity:.5; }
 
 /* Responsif */
 @media (max-width: 420px) {
@@ -467,7 +506,10 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 
   </div>
 
-  <footer class="credit">Dibangun dengan Supabase Storage · DropShare</footer>
+  <footer class="credit">
+    Dibangun dengan Supabase Storage · DropShare<br>
+    <a href="privacy.html">Kebijakan Privasi</a><span class="sep">·</span><a href="terms.html">Ketentuan Layanan</a>
+  </footer>
 </div>
 
 <!-- Toast container -->
