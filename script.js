@@ -111,6 +111,35 @@ function initUploadPage() {
   let selectedFile = null;
   let isUploading  = false;
 
+  // --- Terapkan batasan tipe file dari config.js ke UI secara otomatis ---
+  applyAllowedTypesToUI();
+
+  function applyAllowedTypesToUI() {
+    const exts = CONFIG.ALLOWED_EXTENSIONS || [];
+
+    if (exts.length === 0) {
+      // Tidak ada pembatasan -> terima semua jenis file
+      fileInput.removeAttribute("accept");
+      document.getElementById("dzTitle").textContent = "Seret & lepas file di sini";
+      document.getElementById("dzSub").textContent = "atau klik untuk memilih file dari perangkatmu";
+      document.getElementById("tagline").textContent = "Unggah file, dapatkan link, bagikan ke siapa saja. Cepat dan tanpa ribet.";
+      return;
+    }
+
+    // accept="" dipakai browser untuk memfilter file picker (mis. ".json,.pdf,.csv")
+    fileInput.setAttribute("accept", exts.join(","));
+
+    // Label yang ramah dibaca, mis. ".json" -> "JSON", digabung jadi "JSON, PDF, atau CSV"
+    const labels = exts.map((e) => e.replace(".", "").toUpperCase());
+    const readable = labels.length === 1
+      ? labels[0]
+      : labels.slice(0, -1).join(", ") + " atau " + labels[labels.length - 1];
+
+    document.getElementById("dzTitle").textContent = `Seret & lepas file ${readable} di sini`;
+    document.getElementById("dzSub").textContent = `atau klik untuk memilih file ${readable} dari perangkatmu`;
+    document.getElementById("tagline").textContent = `Unggah file ${readable}, dapatkan link, bagikan ke siapa saja. Cepat dan tanpa ribet.`;
+  }
+
   // --- Klik dropzone -> buka file picker ---
   dropzone.addEventListener("click", () => fileInput.click());
   dropzone.addEventListener("keydown", (e) => {
@@ -159,11 +188,15 @@ function initUploadPage() {
     }
 
     // Validasi: hanya ekstensi tertentu yang diizinkan (diatur di config.js)
-    const nameLower = file.name.toLowerCase();
-    const isAllowedExt = CONFIG.ALLOWED_EXTENSIONS.some((ext) => nameLower.endsWith(ext.toLowerCase()));
-    if (!isAllowedExt) {
-      showToast(`Tipe file tidak didukung. Hanya ${CONFIG.ALLOWED_EXTENSIONS.join(", ")} yang diizinkan.`, "error");
-      return;
+    // Array kosong berarti semua tipe file diizinkan.
+    const exts = CONFIG.ALLOWED_EXTENSIONS || [];
+    if (exts.length > 0) {
+      const nameLower = file.name.toLowerCase();
+      const isAllowedExt = exts.some((ext) => nameLower.endsWith(ext.toLowerCase()));
+      if (!isAllowedExt) {
+        showToast(`Tipe file tidak didukung. Hanya ${exts.join(", ")} yang diizinkan.`, "error");
+        return;
+      }
     }
 
     selectedFile = file;
