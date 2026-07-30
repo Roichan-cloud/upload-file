@@ -6,6 +6,22 @@
 <title>Mengunduh File — DropShare</title>
 <meta name="description" content="File kamu sedang disiapkan untuk diunduh.">
 
+<!-- Favicon -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Open Graph / preview link untuk WhatsApp, Telegram, dll -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mengunduh File — DropShare">
+<meta property="og:description" content="Ada file yang dibagikan untukmu lewat DropShare. Klik untuk mengunduhnya.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:url" content="https://roichan-cloud.github.io/upload-file/download.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mengunduh File — DropShare">
+<meta name="twitter:description" content="Ada file yang dibagikan untukmu lewat DropShare. Klik untuk mengunduhnya.">
+<meta name="twitter:image" content="og-image.png">
+
 <!-- Font modern: Poppins (display) + Inter (body) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -196,8 +212,13 @@ svg { display:block; }
 }
 .dl-icon-wrap svg { width:32px; height:32px; }
 .dl-status { text-align:center; }
-.dl-status h2 { font-size:19px; margin-bottom:6px; }
+.dl-status h2 { font-size:19px; margin-bottom:6px; word-break:break-word; }
 .dl-status p { color: var(--text-soft); font-size:14px; }
+.dl-meta {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  color: var(--text-soft); font-size:13px; margin-bottom:14px;
+}
+.dl-meta .sep { opacity:.5; }
 .big-spinner {
   width:36px; height:36px; margin: 14px auto 4px;
   border-radius:50%;
@@ -238,7 +259,16 @@ svg { display:block; }
 
 footer.credit {
   margin-top:30px; font-size:12px; color: var(--text-soft); text-align:center;
+  line-height:1.8;
 }
+footer.credit a {
+  color: var(--text-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color .15s ease;
+}
+footer.credit a:hover { color: var(--accent); }
+footer.credit .sep { margin: 0 6px; opacity:.5; }
 
 @media (max-width: 420px) {
   .card { padding:22px; border-radius:20px; }
@@ -290,6 +320,27 @@ a:focus-visible, button:focus-visible, input:focus-visible {
       <p>Mohon tunggu sebentar, unduhan akan dimulai otomatis.</p>
     </div>
 
+    <!-- --- File ditemukan: tampilkan info sebelum & sesudah unduhan dimulai --- -->
+    <div class="dl-status" id="dlReady" style="display:none;">
+      <div class="dl-icon-wrap">
+        <svg id="dlReadyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+      </div>
+      <h2 id="dlFileName">file.json</h2>
+      <div class="dl-meta">
+        <span id="dlFileSize">—</span>
+        <span class="sep">·</span>
+        <span id="dlFileDate">—</span>
+      </div>
+      <p id="dlReadyStatus">Menyiapkan unduhan...</p>
+      <div class="big-spinner" id="dlReadySpinner"></div>
+      <div class="upload-btn-wrap" id="dlManualWrap" style="display:none;">
+        <button class="btn btn-primary" id="dlManualBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Unduh Lagi
+        </button>
+      </div>
+    </div>
+
     <!-- --- Error --- -->
     <div class="dl-status dl-error" id="dlError">
       <div class="dl-icon-wrap">
@@ -305,24 +356,12 @@ a:focus-visible, button:focus-visible, input:focus-visible {
       </div>
     </div>
 
-    <!-- --- Selesai --- -->
-    <div class="dl-status" id="dlDone" style="display:none;">
-      <div class="dl-icon-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-      </div>
-      <h2>Unduhan dimulai</h2>
-      <p>Jika unduhan tidak dimulai otomatis, klik tombol di bawah ini.</p>
-      <div class="upload-btn-wrap">
-        <button class="btn btn-primary" id="dlManualBtn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
-          Unduh Sekarang
-        </button>
-      </div>
-    </div>
-
   </div>
 
-  <footer class="credit">Dibangun dengan Supabase Storage · DropShare</footer>
+  <footer class="credit">
+    Dibangun dengan Supabase Storage · DropShare<br>
+    <a href="privacy.html">Kebijakan Privasi</a><span class="sep">·</span><a href="terms.html">Ketentuan Layanan</a>
+  </footer>
 </div>
 
 <!-- Toast container -->
